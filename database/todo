@@ -1,0 +1,117 @@
+PIS 
+
+
+user_contact
+------------
+it has contacttype --> missing relation. 
+needs RF_CONTACTTYPE. it holds 
+CONTACTTYPE
+DESC
+(1, "Address")
+(2, "Mobile Phone")
+(3, "Home Phone")
+(4, "Work Phone")
+(5, "email")
+etc
+
+
+RF_BODYPART
+-----------
+BODYPART,
+DESCRIPTION
+(1, "Weight (KG)")
+(2, "Height (CM)")
+
+(20, "Head")
+(21, "Neck")
+(22, "Right Shoulder")
+
+(50, "Blood Preassure (Whatever SOM)")
+(60, "Heart Rate (bps)")
+(70, "Diabetic")
+etc
+
+
+USER_HEALTH_HISTORY
+-------------------
+BODYPART,
+DTSTART,
+DTEND,
+SCALE,
+REASON,
+NOTES,
+PICPATH
+
+(1, '2/feb/2019', NULL, 75.2, NULL, NULL, NULL)
+(22, '5/Nov/2003', NULL, 7, 'Motor Accident', 'Annoying when lifting arm', 'rontgen path')
+
+
+USER_ACTIVITY
+-------------
+ACTIVITY,
+DESC,
+DTSTART,
+DTEND
+
+('What', 'as what' , since-when, until-when)
+('Work', 'Programmer', '1 Jan 2000', NULL)
+('Basketball', 'Point Guard', '1 jan 1995', '31 dec 2001')
+
+
+
+USER_EXERCISE
+-------------
+ID, 
+ORGID,
+USERID, 
+DTEXERCISE,
+SUPERVISORID
+
+(15, 1, 2, '15/Apr/2019', 3)
+
+
+RF_MOVEMENT
+-----------
+MOVEMENTID,
+MOVEMENT,
+STEPS,
+VIDEOPATH,
+NOTES
+
+(10, 'Bench Press', '1. Lay on a bench. 2. lift weight', null, null)
+(20, 'Doggy strecth', '1. crouch', 'bla', null)
+
+USER_EXERCISE_DETAIL
+--------------------
+USEREXSERCISEID,
+MOVEMENTID,
+EXERCISESEQ,
+SETS,
+REPS,
+SECONDDURATION,
+RESTDURATION, --> add (16/feb/2019)
+NOTES,
+VIDEOPATH
+
+(15, 10, 1, 2, 10, null, 30, null, null)
+(15, 20, 2, 2, null, 10, 10, null, null)
+
+
+EXERCISE_STATUS --> (added 16 Feb 2019)
+---------------
+EXERCISESTATUSID
+USEREXERCISEID,
+USERAPPROVAL (BOOL)
+USERAPPROVALDATE
+SUPERVISORAPPROVAL (BOOL)
+SUPERVISORAPPROVALDATE
+
+
+TRAINING_PACKAGE --> (added 16 Feb 2019)
+----------------
+ORGANIZATIONID,
+DTCREATED,
+PRICE_IDR (FLOAT),
+PACKAGEID,
+PACKAGENAME,
+PACKAGEDESCRIPTION,
