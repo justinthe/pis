@@ -29,6 +29,9 @@ DESCRIPTION
 (50, "Blood Preassure (Whatever SOM)")
 (60, "Heart Rate (bps)")
 (70, "Diabetic")
+
+(100, 'Front body shot')
+(110, "Left body shot')
 etc
 
 
@@ -44,6 +47,7 @@ PICPATH
 
 (1, '2/feb/2019', NULL, 75.2, NULL, NULL, NULL)
 (22, '5/Nov/2003', NULL, 7, 'Motor Accident', 'Annoying when lifting arm', 'rontgen path')
+(100, '23/Apr/2019', NULL, NULL, NULL, NULL, 'pic path')
 
 
 USER_ACTIVITY
@@ -124,9 +128,32 @@ CLIENT_PACKAGE --> (added 16 Feb 2019)
 CLIENTPACKAGEID,
 PACKAGEID,
 USERID,
-TRAINERID,
+TRAINERID, (Default trainer or perhaps marketer who sold the package)
 DTSTART,
 PRICE_IDR (FLOAT) (sometimes price advertised is not fixed. this enable negotiation between client and trainer)
+TARGETID (?)
+
+
+
+<- turned out user_health_history covers this already) --!>
+
+      CLIENT_CHECKPOINT --> HOLD PROGRESS INFO, SUCH AS PICS, AND ANY OTHER INFO
+      -------------------
+      CHECKPOINTID,
+      USERID
+
+
+      CLIENT_CHECKPOINT_INFO
+      ----------------------
+      CHECKPOINTID,
+      DESCRIPTION (PIC, RIGHT SIDE, FRONT SIDE, ETC, MEDICAL LETTER, ETC),
+      PICPATH,
+      DTCREATED, --> entry creation date
+      DTINFO --> info created or if it is a pic, when was it taken
+      NOTES
+
+<- turned out user_health_history covers this already) --!>
+
 
 PACKAGE_USAGE (RELATES TO USER_EXERCISE AND PACKAGE)
 -------------
