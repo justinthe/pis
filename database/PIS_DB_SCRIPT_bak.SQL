@@ -5,8 +5,14 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 
 -- -----------------------------------------------------
--- Schema mydb
+-- Schema pis
 -- -----------------------------------------------------
+DROP SCHEMA IF EXISTS `pis` ;
+
+-- -----------------------------------------------------
+-- Schema pis
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `pis` DEFAULT CHARACTER SET utf8 ;
 -- -----------------------------------------------------
 -- Schema pis
 -- -----------------------------------------------------
@@ -31,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `pis`.`user` (
   `MIDDLENAME` VARCHAR(50) CHARACTER SET 'utf8' NULL DEFAULT NULL,
   `LASTNAME` VARCHAR(50) CHARACTER SET 'utf8' NOT NULL,
   `DOB` DATE NOT NULL,
+  `DTJOINED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `DTUPDATED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`USERID`, `USERNAME`),
   INDEX `USERNAME` (`USERNAME` ASC, `FIRSTNAME` ASC, `LASTNAME` ASC))
@@ -39,18 +46,17 @@ DEFAULT CHARACTER SET = latin1;
 
 
 -- -----------------------------------------------------
--- Table `pis`.`chat_message`
+-- Table `pis`.`user_contact`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`chat_message` ;
+DROP TABLE IF EXISTS `pis`.`user_contact` ;
 
-CREATE TABLE IF NOT EXISTS `pis`.`chat_message` (
-  `MESSAGEID` INT(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS `pis`.`user_contact` (
   `USERID` INT(11) NOT NULL,
-  `MESSAGE` VARCHAR(256) CHARACTER SET 'utf8' NULL DEFAULT NULL,
-  `DTCREATED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`MESSAGEID`),
-  INDEX `USERID` (`USERID` ASC),
-  CONSTRAINT `chat_message_ibfk_1`
+  `CONTACTTYPE` SMALLINT(6) NOT NULL,
+  `CONTACTVALUE` VARCHAR(200) CHARACTER SET 'utf8' NOT NULL,
+  `DTSTART` DATE NOT NULL,
+  INDEX `USERID` (`USERID` ASC, `CONTACTTYPE` ASC, `CONTACTVALUE` ASC, `DTSTART` ASC),
+  CONSTRAINT `user_contact_ibfk_1`
     FOREIGN KEY (`USERID`)
     REFERENCES `pis`.`user` (`USERID`))
 ENGINE = InnoDB
@@ -58,16 +64,20 @@ DEFAULT CHARACTER SET = latin1;
 
 
 -- -----------------------------------------------------
--- Table `pis`.`chat_session`
+-- Table `pis`.`rf_contacttype`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`chat_session` ;
+DROP TABLE IF EXISTS `pis`.`rf_contacttype` ;
 
-CREATE TABLE IF NOT EXISTS `pis`.`chat_session` (
-  `CHATID` INT(11) NOT NULL AUTO_INCREMENT,
-  `DTCREATED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`CHATID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
+CREATE TABLE IF NOT EXISTS `pis`.`rf_contacttype` (
+  `CONTACTTYPE` SMALLINT(6) GENERATED ALWAYS AS () VIRTUAL COMMENT '1, Address\n2, Mobile Phone\n3, Home Phone\n4, Work Phone\n5, email\netc',
+  `DESCRIPTION` NVARCHAR(60) NOT NULL,
+  PRIMARY KEY (`CONTACTTYPE`),
+  CONSTRAINT `FK_RF_CONTACTTYPE_USER_CONTACT`
+    FOREIGN KEY (`CONTACTTYPE`)
+    REFERENCES `pis`.`user_contact` (`CONTACTTYPE`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
@@ -107,17 +117,43 @@ DEFAULT CHARACTER SET = latin1;
 
 
 -- -----------------------------------------------------
+-- Table `pis`.`user_exercise_schedule`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`user_exercise_schedule` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`user_exercise_schedule` (
+  `USEREXERCISESCHEDULEID` INT NOT NULL COMMENT 'Enable schedule training with different trainers',
+  `USEREXERCISEID` INT NULL,
+  `DTEXERCISE` DATETIME NULL,
+  `TRAINERID` INT(11) NULL,
+  PRIMARY KEY (`USEREXERCISESCHEDULEID`),
+  INDEX `FK_USER_EXERCISE_USER_EXERCISE_SCHEDULE_idx` (`USEREXERCISEID` ASC),
+  INDEX `FK_USER_USER_EXERCISE_SCHEDULE_idx` (`TRAINERID` ASC),
+  CONSTRAINT `FK_USER_EXERCISE_USER_EXERCISE_SCHEDULE`
+    FOREIGN KEY (`USEREXERCISEID`)
+    REFERENCES `pis`.`user_exercise` (`USEREXERCISEID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `FK_USER_USER_EXERCISE_SCHEDULE`
+    FOREIGN KEY (`TRAINERID`)
+    REFERENCES `pis`.`user` (`USERID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
 -- Table `pis`.`exercise_status`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `pis`.`exercise_status` ;
 
 CREATE TABLE IF NOT EXISTS `pis`.`exercise_status` (
-  `EXERCISESTATUSID` INT(11) NOT NULL,
-  `USEREXERCISEID` INT(11) NULL DEFAULT NULL,
-  `USERAPPROVAL` TINYINT(4) NULL DEFAULT NULL,
-  `USERAPPROVALDATE` DATE NULL DEFAULT NULL,
-  `TRAINERAPPROVAL` TINYINT(4) NULL DEFAULT NULL,
-  `TRAINERAPPROVALDATE` DATE NULL DEFAULT NULL,
+  `EXERCISESTATUSID` INT NOT NULL,
+  `USEREXERCISEID` INT NULL,
+  `USERAPPROVAL` TINYINT NULL,
+  `USERAPPROVALDATE` DATE NULL,
+  `TRAINERAPPROVAL` TINYINT NULL,
+  `TRAINERAPPROVALDATE` DATE NULL,
   PRIMARY KEY (`EXERCISESTATUSID`),
   INDEX `FK_USER_EXERCISE_EXERCISE_STATUS_idx` (`USEREXERCISEID` ASC),
   CONSTRAINT `FK_USER_EXERCISE_EXERCISE_STATUS`
@@ -125,24 +161,31 @@ CREATE TABLE IF NOT EXISTS `pis`.`exercise_status` (
     REFERENCES `pis`.`user_exercise` (`USEREXERCISEID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
+ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `pis`.`rf_movement`
+-- Table `pis`.`training_package`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`rf_movement` ;
+DROP TABLE IF EXISTS `pis`.`training_package` ;
 
-CREATE TABLE IF NOT EXISTS `pis`.`rf_movement` (
-  `MOVEMENTID` INT(11) NOT NULL AUTO_INCREMENT COMMENT '10, Bench press, 1. lay on bench. 2. lift weight. 3 etc, \'path to video\', null\n',
-  `MOVEMENT` VARCHAR(45) NULL DEFAULT NULL,
-  `STEPS` TEXT NOT NULL,
-  `VIDEOPATH` VARCHAR(100) CHARACTER SET 'utf8' NULL DEFAULT NULL,
-  `NOTES` TEXT NULL DEFAULT NULL,
-  PRIMARY KEY (`MOVEMENTID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
+CREATE TABLE IF NOT EXISTS `pis`.`training_package` (
+  `PACKAGEID` INT(11) NOT NULL,
+  `ORGANIZATIONID` INT(11) NOT NULL,
+  `DTCREATED` DATE NOT NULL,
+  `PACKAGENAME` VARCHAR(45) NULL,
+  `PACKAGEDESCRIPTION` NVARCHAR(100) NULL,
+  `TOTALSESSION` INT NOT NULL,
+  `DURATION` INT NULL COMMENT 'Duration in month',
+  `PRICE` DOUBLE NULL COMMENT 'Price in IDR\n',
+  PRIMARY KEY (`PACKAGEID`),
+  INDEX `FK_ORGANIZATION_TRAINING_PACKAGE_idx` (`ORGANIZATIONID` ASC),
+  CONSTRAINT `FK_ORGANIZATION_TRAINING_PACKAGE`
+    FOREIGN KEY (`ORGANIZATIONID`)
+    REFERENCES `pis`.`organization` (`ORGANIZATIONID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
@@ -154,6 +197,121 @@ CREATE TABLE IF NOT EXISTS `pis`.`rf_bodypart` (
   `BODYPARTID` INT(11) NOT NULL COMMENT '1, weight (kg)\n2, Height (cm)\n20, head\n25, neck\n30, right shoulder\n50, Blood preassure (whatever som)\n55, Heart rate (bpm)\n70, diabetic (yes no)\n100, front body shot --> to hold pic\n105, left body shot  --> to hold pic\n',
   `BODYPARTDESC` VARCHAR(100) CHARACTER SET 'utf8' NULL DEFAULT NULL,
   PRIMARY KEY (`BODYPARTID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `pis`.`user_target`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`user_target` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`user_target` (
+  `USERTARGETID` INT(11) NOT NULL AUTO_INCREMENT,
+  `USERID` INT(11) NOT NULL,
+  `BODYPARTID` INT(11) NOT NULL,
+  `DTTARGET` DATE NOT NULL,
+  `SOM` VARCHAR(10) CHARACTER SET 'utf8' NOT NULL,
+  `TARGETVALUE` DOUBLE NOT NULL,
+  PRIMARY KEY (`USERTARGETID`),
+  INDEX `USERID` (`USERID` ASC, `BODYPARTID` ASC),
+  INDEX `BODYPARTID` (`BODYPARTID` ASC),
+  CONSTRAINT `user_target_ibfk_1`
+    FOREIGN KEY (`USERID`)
+    REFERENCES `pis`.`user` (`USERID`),
+  CONSTRAINT `user_target_ibfk_2`
+    FOREIGN KEY (`BODYPARTID`)
+    REFERENCES `pis`.`rf_bodypart` (`BODYPARTID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `pis`.`user_package`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`user_package` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`user_package` (
+  `USERPACKAGEID` INT NOT NULL,
+  `PACKAGEID` INT(11) NULL,
+  `USERID` INT(11) NULL,
+  `TRAINERID` INT(11) NULL,
+  `DTSTART` DATE NULL,
+  `PRICE` DOUBLE NULL COMMENT 'sometimes price advertised is not fixed. this enable negotiation between client and trainer',
+  `USERTARGETID` INT(11) NULL,
+  PRIMARY KEY (`USERPACKAGEID`),
+  INDEX `FK_TRAINING_PACKAGE_USER_PACKAGE_idx` (`PACKAGEID` ASC),
+  INDEX `FK_USER_USER_PACKAGE_idx` (`USERID` ASC),
+  INDEX `FK_TRAINER_USER_PACKAGE_idx` (`TRAINERID` ASC),
+  INDEX `FK_USER_TARGET_USER_PACKAGE_idx` (`USERTARGETID` ASC),
+  CONSTRAINT `FK_TRAINING_PACKAGE_USER_PACKAGE`
+    FOREIGN KEY (`PACKAGEID`)
+    REFERENCES `pis`.`training_package` (`PACKAGEID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `FK_USER_USER_PACKAGE`
+    FOREIGN KEY (`USERID`)
+    REFERENCES `pis`.`user` (`USERID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `FK_TRAINER_USER_PACKAGE`
+    FOREIGN KEY (`TRAINERID`)
+    REFERENCES `pis`.`user` (`USERID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `FK_USER_TARGET_USER_PACKAGE`
+    FOREIGN KEY (`USERTARGETID`)
+    REFERENCES `pis`.`user_target` (`USERTARGETID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+USE `pis` ;
+
+-- -----------------------------------------------------
+-- Table `pis`.`chat_message`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`chat_message` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`chat_message` (
+  `MESSAGEID` INT(11) NOT NULL AUTO_INCREMENT,
+  `USERID` INT(11) NOT NULL,
+  `MESSAGE` VARCHAR(256) CHARACTER SET 'utf8' NULL DEFAULT NULL,
+  `DTCREATED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`MESSAGEID`),
+  INDEX `USERID` (`USERID` ASC),
+  CONSTRAINT `chat_message_ibfk_1`
+    FOREIGN KEY (`USERID`)
+    REFERENCES `pis`.`user` (`USERID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `pis`.`chat_session`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`chat_session` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`chat_session` (
+  `CHATID` INT(11) NOT NULL AUTO_INCREMENT,
+  `DTCREATED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`CHATID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `pis`.`rf_movement`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`rf_movement` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`rf_movement` (
+  `MOVEMENTID` INT(11) NOT NULL AUTO_INCREMENT COMMENT '10, Bench press, 1. lay on bench. 2. lift weight. 3 etc, \'path to video\', null\n',
+  `MOVEMENT` VARCHAR(45) NULL,
+  `STEPS` TEXT NOT NULL,
+  `VIDEOPATH` VARCHAR(100) CHARACTER SET 'utf8' NULL DEFAULT NULL,
+  `NOTES` TEXT NULL DEFAULT NULL,
+  PRIMARY KEY (`MOVEMENTID`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
@@ -203,19 +361,6 @@ DEFAULT CHARACTER SET = latin1;
 
 
 -- -----------------------------------------------------
--- Table `pis`.`rf_contacttype`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`rf_contacttype` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`rf_contacttype` (
-  `CONTACTTYPE` SMALLINT(6) NOT NULL COMMENT '1, Address\n2, Mobile Phone\n3, Home Phone\n4, Work Phone\n5, email\netc',
-  `DESCRIPTION` VARCHAR(60) CHARACTER SET 'utf8' NOT NULL,
-  PRIMARY KEY (`CONTACTTYPE`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
 -- Table `pis`.`rf_relation`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `pis`.`rf_relation` ;
@@ -237,31 +382,6 @@ CREATE TABLE IF NOT EXISTS `pis`.`rf_role` (
   `ROLEID` INT(11) NOT NULL AUTO_INCREMENT,
   `ROLEDESC` VARCHAR(50) CHARACTER SET 'utf8' NOT NULL,
   PRIMARY KEY (`ROLEID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
--- Table `pis`.`training_package`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`training_package` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`training_package` (
-  `PACKAGEID` INT(11) NOT NULL,
-  `ORGANIZATIONID` INT(11) NOT NULL,
-  `DTCREATED` DATE NOT NULL,
-  `PACKAGENAME` VARCHAR(45) NULL DEFAULT NULL,
-  `PACKAGEDESCRIPTION` VARCHAR(100) CHARACTER SET 'utf8' NULL DEFAULT NULL,
-  `TOTALSESSION` INT(11) NOT NULL,
-  `DURATION` INT(11) NULL DEFAULT NULL COMMENT 'Duration in month',
-  `PRICE` DOUBLE NULL DEFAULT NULL COMMENT 'Price in IDR\n',
-  PRIMARY KEY (`PACKAGEID`),
-  INDEX `FK_ORGANIZATION_TRAINING_PACKAGE_idx` (`ORGANIZATIONID` ASC),
-  CONSTRAINT `FK_ORGANIZATION_TRAINING_PACKAGE`
-    FOREIGN KEY (`ORGANIZATIONID`)
-    REFERENCES `pis`.`organization` (`ORGANIZATIONID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
@@ -306,29 +426,6 @@ DEFAULT CHARACTER SET = latin1;
 
 
 -- -----------------------------------------------------
--- Table `pis`.`user_contact`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`user_contact` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`user_contact` (
-  `USERID` INT(11) NOT NULL,
-  `CONTACTTYPE` SMALLINT(6) NOT NULL,
-  `CONTACTVALUE` VARCHAR(200) CHARACTER SET 'utf8' NOT NULL,
-  `DTSTART` DATE NOT NULL,
-  INDEX `USERID` (`USERID` ASC, `CONTACTTYPE` ASC, `CONTACTVALUE` ASC, `DTSTART` ASC),
-  CONSTRAINT `user_contact_ibfk_1`
-    FOREIGN KEY (`USERID`)
-    REFERENCES `pis`.`user` (`USERID`),
-  CONSTRAINT `FK_RF_CONTACTTYPE_USER_CONTACT`
-    FOREIGN KEY (`CONTACTTYPE`)
-    REFERENCES `pis`.`rf_contacttype` (`CONTACTTYPE`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
 -- Table `pis`.`user_exercise_detail`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `pis`.`user_exercise_detail` ;
@@ -339,8 +436,8 @@ CREATE TABLE IF NOT EXISTS `pis`.`user_exercise_detail` (
   `EXERCISESEQ` INT(11) NOT NULL,
   `SETS` INT(11) NULL DEFAULT NULL,
   `REPS` INT(11) NULL DEFAULT NULL,
-  `SECONDDURATION` INT(11) NULL DEFAULT NULL,
-  `RESTDURATION` INT(11) NULL DEFAULT NULL,
+  `SECONDDURATION` INT NULL DEFAULT NULL,
+  `RESTDURATION` INT NULL,
   `NOTES` VARCHAR(200) CHARACTER SET 'utf8' NULL DEFAULT NULL,
   `VIDEOPATH` VARCHAR(100) CHARACTER SET 'utf8' NULL DEFAULT NULL,
   PRIMARY KEY (`USEREXERCISEID`),
@@ -351,33 +448,6 @@ CREATE TABLE IF NOT EXISTS `pis`.`user_exercise_detail` (
   CONSTRAINT `user_exercise_detail_ibfk_2`
     FOREIGN KEY (`MOVEMENTID`)
     REFERENCES `pis`.`rf_movement` (`MOVEMENTID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
--- Table `pis`.`user_exercise_schedule`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`user_exercise_schedule` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`user_exercise_schedule` (
-  `USEREXERCISESCHEDULEID` INT(11) NOT NULL COMMENT 'Enable schedule training with different trainers',
-  `USEREXERCISEID` INT(11) NULL DEFAULT NULL,
-  `DTEXERCISE` DATETIME NULL DEFAULT NULL,
-  `TRAINERID` INT(11) NULL DEFAULT NULL,
-  PRIMARY KEY (`USEREXERCISESCHEDULEID`),
-  INDEX `FK_USER_EXERCISE_USER_EXERCISE_SCHEDULE_idx` (`USEREXERCISEID` ASC),
-  INDEX `FK_USER_USER_EXERCISE_SCHEDULE_idx` (`TRAINERID` ASC),
-  CONSTRAINT `FK_USER_EXERCISE_USER_EXERCISE_SCHEDULE`
-    FOREIGN KEY (`USEREXERCISEID`)
-    REFERENCES `pis`.`user_exercise` (`USEREXERCISEID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_USER_USER_EXERCISE_SCHEDULE`
-    FOREIGN KEY (`TRAINERID`)
-    REFERENCES `pis`.`user` (`USERID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
@@ -441,7 +511,6 @@ DROP TABLE IF EXISTS `pis`.`user_organization` ;
 CREATE TABLE IF NOT EXISTS `pis`.`user_organization` (
   `USERID` INT(11) NOT NULL,
   `ORGANIZATIONID` INT(11) NOT NULL,
-  `DTJOINED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX `USERID` (`USERID` ASC),
   INDEX `ORGANIZATIONID` (`ORGANIZATIONID` ASC),
   CONSTRAINT `user_organization_ibfk_1`
@@ -450,73 +519,6 @@ CREATE TABLE IF NOT EXISTS `pis`.`user_organization` (
   CONSTRAINT `user_organization_ibfk_2`
     FOREIGN KEY (`ORGANIZATIONID`)
     REFERENCES `pis`.`organization` (`ORGANIZATIONID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
--- Table `pis`.`user_target`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`user_target` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`user_target` (
-  `USERTARGETID` INT(11) NOT NULL AUTO_INCREMENT,
-  `USERID` INT(11) NOT NULL,
-  `BODYPARTID` INT(11) NOT NULL,
-  `DTTARGET` DATE NOT NULL,
-  `SOM` VARCHAR(10) CHARACTER SET 'utf8' NOT NULL,
-  `TARGETVALUE` DOUBLE NOT NULL,
-  PRIMARY KEY (`USERTARGETID`),
-  INDEX `USERID` (`USERID` ASC, `BODYPARTID` ASC),
-  INDEX `BODYPARTID` (`BODYPARTID` ASC),
-  CONSTRAINT `user_target_ibfk_1`
-    FOREIGN KEY (`USERID`)
-    REFERENCES `pis`.`user` (`USERID`),
-  CONSTRAINT `user_target_ibfk_2`
-    FOREIGN KEY (`BODYPARTID`)
-    REFERENCES `pis`.`rf_bodypart` (`BODYPARTID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
--- Table `pis`.`user_package`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`user_package` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`user_package` (
-  `USERPACKAGEID` INT(11) NOT NULL,
-  `PACKAGEID` INT(11) NULL DEFAULT NULL,
-  `USERID` INT(11) NULL DEFAULT NULL,
-  `TRAINERID` INT(11) NULL DEFAULT NULL,
-  `DTSTART` DATE NULL DEFAULT NULL,
-  `PRICE` DOUBLE NULL DEFAULT NULL COMMENT 'sometimes price advertised is not fixed. this enable negotiation between client and trainer',
-  `USERTARGETID` INT(11) NULL DEFAULT NULL,
-  PRIMARY KEY (`USERPACKAGEID`),
-  INDEX `FK_TRAINING_PACKAGE_USER_PACKAGE_idx` (`PACKAGEID` ASC),
-  INDEX `FK_USER_USER_PACKAGE_idx` (`USERID` ASC),
-  INDEX `FK_TRAINER_USER_PACKAGE_idx` (`TRAINERID` ASC),
-  INDEX `FK_USER_TARGET_USER_PACKAGE_idx` (`USERTARGETID` ASC),
-  CONSTRAINT `FK_TRAINER_USER_PACKAGE`
-    FOREIGN KEY (`TRAINERID`)
-    REFERENCES `pis`.`user` (`USERID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_TRAINING_PACKAGE_USER_PACKAGE`
-    FOREIGN KEY (`PACKAGEID`)
-    REFERENCES `pis`.`training_package` (`PACKAGEID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_USER_TARGET_USER_PACKAGE`
-    FOREIGN KEY (`USERTARGETID`)
-    REFERENCES `pis`.`user_target` (`USERTARGETID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_USER_USER_PACKAGE`
-    FOREIGN KEY (`USERID`)
-    REFERENCES `pis`.`user` (`USERID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
