@@ -5,9 +5,6 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 
 -- -----------------------------------------------------
--- Schema mydb
--- -----------------------------------------------------
--- -----------------------------------------------------
 -- Schema pis
 -- -----------------------------------------------------
 DROP SCHEMA IF EXISTS `pis` ;
@@ -38,6 +35,29 @@ CREATE TABLE IF NOT EXISTS `pis`.`user` (
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
+
+-- -----------------------------------------------------
+-- Table `pis`.`experience`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`experience` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`experience` (
+  `EXPERIENCEID` INT(11) NOT NULL,
+  `USERID` INT(11) NOT NULL,
+  `EMPLOYER` NVARCHAR(60) NOT NULL,
+  `TITLE` NVARCHAR(60) NOT NULL,
+  `DTSTART` DATE NOT NULL,
+  `DTEND` DATE NULL,
+  PRIMARY KEY (`EXPERIENCEID`, `USERID`, `EMPLOYER`, `TITLE`),
+  INDEX `FK_USERID_EXPERIENCE_idx` (`USERID` ASC),
+  CONSTRAINT `FK_USERID_EXPERIENCE`
+    FOREIGN KEY (`USERID`)
+    REFERENCES `pis`.`user` (`USERID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+USE `pis` ;
 
 -- -----------------------------------------------------
 -- Table `pis`.`certifications`
