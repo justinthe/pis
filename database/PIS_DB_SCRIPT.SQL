@@ -5,6 +5,9 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 
 -- -----------------------------------------------------
+-- Schema mydb
+-- -----------------------------------------------------
+-- -----------------------------------------------------
 -- Schema pis
 -- -----------------------------------------------------
 DROP SCHEMA IF EXISTS `pis` ;
@@ -35,29 +38,6 @@ CREATE TABLE IF NOT EXISTS `pis`.`user` (
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
-
--- -----------------------------------------------------
--- Table `pis`.`experience`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`experience` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`experience` (
-  `EXPERIENCEID` INT(11) NOT NULL,
-  `USERID` INT(11) NOT NULL,
-  `EMPLOYER` NVARCHAR(60) NOT NULL,
-  `TITLE` NVARCHAR(60) NOT NULL,
-  `DTSTART` DATE NOT NULL,
-  `DTEND` DATE NULL,
-  PRIMARY KEY (`EXPERIENCEID`, `USERID`, `EMPLOYER`, `TITLE`),
-  INDEX `FK_USERID_EXPERIENCE_idx` (`USERID` ASC),
-  CONSTRAINT `FK_USERID_EXPERIENCE`
-    FOREIGN KEY (`USERID`)
-    REFERENCES `pis`.`user` (`USERID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-USE `pis` ;
 
 -- -----------------------------------------------------
 -- Table `pis`.`certifications`
@@ -176,6 +156,29 @@ DEFAULT CHARACTER SET = latin1;
 
 
 -- -----------------------------------------------------
+-- Table `pis`.`experience`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`experience` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`experience` (
+  `EXPERIENCEID` INT(11) NOT NULL,
+  `USERID` INT(11) NOT NULL,
+  `EMPLOYER` VARCHAR(60) CHARACTER SET 'utf8' NOT NULL,
+  `TITLE` VARCHAR(60) CHARACTER SET 'utf8' NOT NULL,
+  `DTSTART` DATE NOT NULL,
+  `DTEND` DATE NULL DEFAULT NULL,
+  PRIMARY KEY (`EXPERIENCEID`, `USERID`, `EMPLOYER`, `TITLE`),
+  INDEX `FK_USERID_EXPERIENCE_idx` (`USERID` ASC),
+  CONSTRAINT `FK_USERID_EXPERIENCE`
+    FOREIGN KEY (`USERID`)
+    REFERENCES `pis`.`user` (`USERID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
 -- Table `pis`.`training_package`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `pis`.`training_package` ;
@@ -184,7 +187,9 @@ CREATE TABLE IF NOT EXISTS `pis`.`training_package` (
   `PACKAGEID` INT(11) NOT NULL,
   `ORGANIZATIONID` INT(11) NOT NULL,
   `DTCREATED` DATE NOT NULL,
-  `PACKAGENAME` VARCHAR(45) NULL DEFAULT NULL,
+  `PACKAGENAME` VARCHAR(45) NOT NULL,
+  `PACKAGETITLE` VARCHAR(45) NULL,
+  `PACKAGESUBTITLE` VARCHAR(45) NULL,
   `PACKAGEDESCRIPTION` VARCHAR(100) CHARACTER SET 'utf8' NULL DEFAULT NULL,
   `TOTALSESSION` INT(11) NOT NULL,
   `DURATION` INT(11) NULL DEFAULT NULL COMMENT 'Duration in month',
