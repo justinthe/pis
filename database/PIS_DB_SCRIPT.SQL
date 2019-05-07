@@ -5,9 +5,6 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 
 -- -----------------------------------------------------
--- Schema mydb
--- -----------------------------------------------------
--- -----------------------------------------------------
 -- Schema pis
 -- -----------------------------------------------------
 DROP SCHEMA IF EXISTS `pis` ;
@@ -17,6 +14,56 @@ DROP SCHEMA IF EXISTS `pis` ;
 -- -----------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS `pis` DEFAULT CHARACTER SET latin1 ;
 USE `pis` ;
+
+-- -----------------------------------------------------
+-- Table `pis`.`organization`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`organization` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`organization` (
+  `ORGANIZATIONID` INT(11) NOT NULL,
+  `ORGANIZATIONNAME` VARCHAR(100) NULL,
+  `DTJOINED` VARCHAR(45) NULL,
+  PRIMARY KEY (`ORGANIZATIONID`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `pis`.`suborganization`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`suborganization` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`suborganization` (
+  `SUBORGANIZATIONID` INT(11) NOT NULL AUTO_INCREMENT,
+  `SUBORGANIZATIONNAME` VARCHAR(100) CHARACTER SET 'utf8' NOT NULL,
+  `DTJOINED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`SUBORGANIZATIONID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `pis`.`organization_suborganization`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`organization_suborganization` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`organization_suborganization` (
+  `ORGANIZATIONID` INT(11) NOT NULL,
+  `SUBORGANIZATIONID` INT(11) NOT NULL,
+  PRIMARY KEY (`ORGANIZATIONID`, `SUBORGANIZATIONID`),
+  INDEX `fk_organization_suborganization_2_idx` (`SUBORGANIZATIONID` ASC),
+  CONSTRAINT `fk_organization_suborganization_1`
+    FOREIGN KEY (`ORGANIZATIONID`)
+    REFERENCES `pis`.`organization` (`ORGANIZATIONID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_organization_suborganization_2`
+    FOREIGN KEY (`SUBORGANIZATIONID`)
+    REFERENCES `pis`.`suborganization` (`SUBORGANIZATIONID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
 
 -- -----------------------------------------------------
 -- Table `pis`.`user`
@@ -38,6 +85,33 @@ CREATE TABLE IF NOT EXISTS `pis`.`user` (
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
+
+-- -----------------------------------------------------
+-- Table `pis`.`organization_contact`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`organization_contact` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`organization_contact` (
+  `ORGANIZATIONID` INT(11) NOT NULL,
+  `PIC` INT(11) NOT NULL,
+  `CONTACTTYPE` SMALLINT(6) NOT NULL,
+  `CONTACTVALUE` VARCHAR(200) NULL,
+  `DTSTART` DATE NOT NULL,
+  PRIMARY KEY (`ORGANIZATIONID`, `PIC`, `CONTACTTYPE`, `DTSTART`),
+  INDEX `fk_organization_contact_2_idx` (`PIC` ASC),
+  CONSTRAINT `fk_organization_contact_1`
+    FOREIGN KEY (`ORGANIZATIONID`)
+    REFERENCES `pis`.`organization` (`ORGANIZATIONID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_organization_contact_2`
+    FOREIGN KEY (`PIC`)
+    REFERENCES `pis`.`user` (`USERID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+USE `pis` ;
 
 -- -----------------------------------------------------
 -- Table `pis`.`certifications`
@@ -97,34 +171,20 @@ DEFAULT CHARACTER SET = latin1;
 
 
 -- -----------------------------------------------------
--- Table `pis`.`organization`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`organization` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`organization` (
-  `ORGANIZATIONID` INT(11) NOT NULL AUTO_INCREMENT,
-  `ORGANIZATIONNAME` VARCHAR(100) CHARACTER SET 'utf8' NOT NULL,
-  `DTJOINED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`ORGANIZATIONID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
 -- Table `pis`.`user_exercise`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `pis`.`user_exercise` ;
 
 CREATE TABLE IF NOT EXISTS `pis`.`user_exercise` (
   `USEREXERCISEID` INT(11) NOT NULL AUTO_INCREMENT,
-  `ORGANIZATIONID` INT(11) NOT NULL,
+  `SUBORGANIZATIONID` INT(11) NOT NULL,
   `USERID` INT(11) NOT NULL,
   PRIMARY KEY (`USEREXERCISEID`),
-  INDEX `ORGANIZATIONID` (`ORGANIZATIONID` ASC, `USERID` ASC),
+  INDEX `SUBORGANIZATIONID` (`SUBORGANIZATIONID` ASC, `USERID` ASC),
   INDEX `USERID` (`USERID` ASC),
   CONSTRAINT `user_exercise_ibfk_1`
-    FOREIGN KEY (`ORGANIZATIONID`)
-    REFERENCES `pis`.`organization` (`ORGANIZATIONID`),
+    FOREIGN KEY (`SUBORGANIZATIONID`)
+    REFERENCES `pis`.`suborganization` (`SUBORGANIZATIONID`),
   CONSTRAINT `user_exercise_ibfk_2`
     FOREIGN KEY (`USERID`)
     REFERENCES `pis`.`user` (`USERID`))
@@ -185,22 +245,22 @@ DROP TABLE IF EXISTS `pis`.`training_package` ;
 
 CREATE TABLE IF NOT EXISTS `pis`.`training_package` (
   `PACKAGEID` INT(11) NOT NULL,
-  `ORGANIZATIONID` INT(11) NOT NULL,
+  `SUBORGANIZATIONID` INT(11) NOT NULL,
   `DTCREATED` DATE NOT NULL,
   `PACKAGENAME` VARCHAR(45) NOT NULL,
-  `PACKAGETITLE` VARCHAR(45) NULL,
-  `PACKAGESUBTITLE` VARCHAR(45) NULL,
+  `PACKAGETITLE` VARCHAR(45) NULL DEFAULT NULL,
+  `PACKAGESUBTITLE` VARCHAR(45) NULL DEFAULT NULL,
   `PACKAGEDESCRIPTION` VARCHAR(100) CHARACTER SET 'utf8' NULL DEFAULT NULL,
   `TOTALSESSION` INT(11) NOT NULL,
   `DURATION` INT(11) NULL DEFAULT NULL COMMENT 'Duration in month',
   `PRICE` DOUBLE NULL DEFAULT NULL COMMENT 'Price in IDR\n',
   `PACKAGEMANAGERID` INT(11) NULL DEFAULT NULL COMMENT 'Trainer overseeing the package',
   PRIMARY KEY (`PACKAGEID`),
-  INDEX `FK_ORGANIZATION_TRAINING_PACKAGE_idx` (`ORGANIZATIONID` ASC),
+  INDEX `FK_SUBORGANIZATION_TRAINING_PACKAGE_idx` (`SUBORGANIZATIONID` ASC),
   INDEX `FK_USER_PACKAGEMANAGER_idx` (`PACKAGEMANAGERID` ASC),
-  CONSTRAINT `FK_ORGANIZATION_TRAINING_PACKAGE`
-    FOREIGN KEY (`ORGANIZATIONID`)
-    REFERENCES `pis`.`organization` (`ORGANIZATIONID`)
+  CONSTRAINT `FK_SUBORGANIZATION_TRAINING_PACKAGE`
+    FOREIGN KEY (`SUBORGANIZATIONID`)
+    REFERENCES `pis`.`suborganization` (`SUBORGANIZATIONID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `FK_USER_PACKAGEMANAGER`
@@ -298,29 +358,6 @@ DEFAULT CHARACTER SET = latin1;
 
 
 -- -----------------------------------------------------
--- Table `pis`.`organization_contact`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`organization_contact` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`organization_contact` (
-  `ORGANIZATIONID` INT(11) NOT NULL,
-  `PIC` INT(11) NOT NULL,
-  `CONTACTTYPE` SMALLINT(6) NOT NULL,
-  `CONTACTVALUE` VARCHAR(200) CHARACTER SET 'utf8' NOT NULL,
-  `DTSTART` DATE NOT NULL,
-  INDEX `ORGANIZATIONID` (`ORGANIZATIONID` ASC, `PIC` ASC, `CONTACTTYPE` ASC, `CONTACTVALUE` ASC, `DTSTART` ASC),
-  INDEX `PIC` (`PIC` ASC),
-  CONSTRAINT `organization_contact_ibfk_1`
-    FOREIGN KEY (`ORGANIZATIONID`)
-    REFERENCES `pis`.`organization` (`ORGANIZATIONID`),
-  CONSTRAINT `organization_contact_ibfk_2`
-    FOREIGN KEY (`PIC`)
-    REFERENCES `pis`.`user` (`USERID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
 -- Table `pis`.`rf_contacttype`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `pis`.`rf_contacttype` ;
@@ -355,6 +392,31 @@ CREATE TABLE IF NOT EXISTS `pis`.`rf_role` (
   `ROLEID` INT(11) NOT NULL AUTO_INCREMENT,
   `ROLEDESC` VARCHAR(50) CHARACTER SET 'utf8' NOT NULL,
   PRIMARY KEY (`ROLEID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `pis`.`suborganization_contact`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`suborganization_contact` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`suborganization_contact` (
+  `SUBORGANIZATIONID` INT(11) NOT NULL,
+  `PIC` INT(11) NOT NULL,
+  `CONTACTTYPE` SMALLINT(6) NOT NULL,
+  `CONTACTVALUE` VARCHAR(200) CHARACTER SET 'utf8' NOT NULL,
+  `DTSTART` DATE NOT NULL,
+  INDEX `SUBORGANIZATIONID` (`SUBORGANIZATIONID` ASC, `PIC` ASC, `CONTACTTYPE` ASC, `CONTACTVALUE` ASC, `DTSTART` ASC),
+  INDEX `PIC` (`PIC` ASC),
+  CONSTRAINT `suborganization_contact_ibfk_1`
+    FOREIGN KEY (`SUBORGANIZATIONID`)
+    REFERENCES `pis`.`suborganization` (`SUBORGANIZATIONID`),
+  CONSTRAINT `suborganization_contact_ibfk_2`
+    FOREIGN KEY (`PIC`)
+    REFERENCES `pis`.`user` (`USERID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
@@ -603,27 +665,6 @@ DEFAULT CHARACTER SET = latin1;
 
 
 -- -----------------------------------------------------
--- Table `pis`.`user_organization`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `pis`.`user_organization` ;
-
-CREATE TABLE IF NOT EXISTS `pis`.`user_organization` (
-  `USERID` INT(11) NOT NULL,
-  `ORGANIZATIONID` INT(11) NOT NULL,
-  `DTJOINED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX `USERID` (`USERID` ASC),
-  INDEX `ORGANIZATIONID` (`ORGANIZATIONID` ASC),
-  CONSTRAINT `user_organization_ibfk_1`
-    FOREIGN KEY (`USERID`)
-    REFERENCES `pis`.`user` (`USERID`),
-  CONSTRAINT `user_organization_ibfk_2`
-    FOREIGN KEY (`ORGANIZATIONID`)
-    REFERENCES `pis`.`organization` (`ORGANIZATIONID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
 -- Table `pis`.`user_pic`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `pis`.`user_pic` ;
@@ -656,6 +697,27 @@ CREATE TABLE IF NOT EXISTS `pis`.`user_role` (
   CONSTRAINT `user_role_ibfk_2`
     FOREIGN KEY (`ROLEID`)
     REFERENCES `pis`.`rf_role` (`ROLEID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `pis`.`user_suborganization`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `pis`.`user_suborganization` ;
+
+CREATE TABLE IF NOT EXISTS `pis`.`user_suborganization` (
+  `USERID` INT(11) NOT NULL,
+  `SUBORGANIZATIONID` INT(11) NOT NULL,
+  `DTJOINED` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX `USERID` (`USERID` ASC),
+  INDEX `SUBORGANIZATIONID` (`SUBORGANIZATIONID` ASC),
+  CONSTRAINT `user_suborganization_ibfk_1`
+    FOREIGN KEY (`USERID`)
+    REFERENCES `pis`.`user` (`USERID`),
+  CONSTRAINT `user_suborganization_ibfk_2`
+    FOREIGN KEY (`SUBORGANIZATIONID`)
+    REFERENCES `pis`.`suborganization` (`SUBORGANIZATIONID`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
