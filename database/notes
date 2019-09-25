@@ -1,0 +1,27 @@
+Roles:
+1. God          : Penguasa system
+2. Owner/Admin  : Pemilik organisasi
+3. Admin cabang : Pemimpin cabang di sebuah organisasi
+4. Trainer      : Pelatih
+5. Client       : Member
+
+
+ORGANIZATION
+
+
+Paket
+
+Table PACKAGE - detail ttg paket yang ada untuk masing masing sub organisasi
+column SUBORGANIZATIONID - sub organisasi pemilik paket
+untuk TRIAL, FREEBY, CONSULTATION, DEFAULTPRICe nya disesuaikan
+
+
+PACKAGE_TRANSACTION
+mencatat pembelian yang dilakukan oleh member. Dari table ini informasi mengenai total sesi member diperoleh
+
+Table SERVICE_LOG digunakan untuk mencatat kejadian sesungguhnya. 
+table CALENDAR_DETAIL column STATUS mencatat perkiraan (APPROVED). 
+SERVICE_LOG digunakan untuk menghitung sisa latihan dari paket yang telah dibeli oleh member
+
+Table CANCEL_DETAIL akan diisi (dan dilihat) ketika terjadi cancellation terhadap appointment baik dari pihak trainer/member.
+Table CUSTOM_RULES memuat informasi policy masing2 suborganisasi terhadap cancellation. saat ini perlu penerapan business rule di code
