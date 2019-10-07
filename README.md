@@ -1,6 +1,7 @@
 # Pilates Information Systems
 a one stop solution for a small-medium Pilates Studio. 
-It covers:  
+It covers:
+  *  including GOD - system administrator  
   *  users (member, trainer, and owner) management
   *  training calendar and planning
   *  other studio related misc (inventory, promo, etc)
